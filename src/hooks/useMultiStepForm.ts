@@ -1,94 +1,68 @@
-import { useState, Dispatch, SetStateAction } from 'react';
-import {
-  EbiosFormData,
-  Stakeholder,
-  BusinessValue,
-  Threat,
-  FearedEvent,
-  Scenario,
-  Risk,
-} from '../types';
+import { useState } from 'react';
+import type { EbiosFormData } from '../types';
 
-interface Step {
-  title: string;
-  component: React.ComponentType<any>;
-  validation?: (data: EbiosFormData) => boolean; // Fonction de validation pour l'étape
-}
-
-interface UseMultiStepFormReturn {
-  currentStepIndex: number;
-  currentStep: Step;
-  CurrentStepComponent: React.ComponentType<any>; // Pour le rendu du composant
+export type StepComponent = React.FC<{
   data: EbiosFormData;
-  setData: Dispatch<SetStateAction<EbiosFormData>>;
-  nextStep: () => void;
-  prevStep: () => void;
-  goToStep: (index: number) => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
-  validateStep: (index: number) => boolean; // Validation pour une étape spécifique
+  onSubmit: (data: Partial<EbiosFormData>) => void;
+}>;
+
+export interface Step {
+  title: string;
+  component: StepComponent;
+  validation?: (data: EbiosFormData) => boolean;
 }
 
-export function useMultiStepForm(steps: Step[]): UseMultiStepFormReturn {
+const INITIAL_DATA: EbiosFormData = {
+  id: crypto.randomUUID(),
+  context: '',
+  stakeholders: [],
+  businessValues: [],
+  threats: [],
+  fearedEvents: [],
+  scenarios: [],
+  risks: [],
+  actionPlans: [],
+};
+
+export function useMultiStepForm(steps: Step[]) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [data, setData] = useState<EbiosFormData>({
-    context: '',
-    stakeholders: [],
-    businessValues: [],
-    threats: [],
-    fearedEvents: [],
-    scenarios: [],
-    risks: [],
-  });
+  const [data, setData] = useState<EbiosFormData>(INITIAL_DATA);
 
-  const currentStep = steps[currentStepIndex];
+  function nextStep() {
+    setCurrentStepIndex(i => {
+      if (i >= steps.length - 1) return i;
+      return i + 1;
+    });
+  }
 
-  const validateStep = (index: number) => {
-    const step = steps[index];
-    if (step.validation) {
-      return step.validation(data);
-    }
-    return true; // Pas de validation définie pour cette étape, on considère que c'est valide
-  };
-
-  const nextStep = () => {
-    if (validateStep(currentStepIndex)) {
-      setCurrentStepIndex(i => {
-        if (i >= steps.length - 1) return i;
-        return i + 1;
-      });
-    }
-  };
-
-  const prevStep = () => {
+  function prevStep() {
     setCurrentStepIndex(i => {
       if (i <= 0) return i;
       return i - 1;
     });
-  };
+  }
 
-  const goToStep = (index: number) => {
-    // Aller à une étape spécifique, avec validation
-    if (index >= 0 && index < steps.length && validateStep(index)) {
+  function goToStep(index: number) {
+    if (index >= 0 && index < steps.length) {
       setCurrentStepIndex(index);
     }
-  };
+  }
 
-  const updateData = (newData: Partial<EbiosFormData>) => {
-    setData(prev => ({ ...prev, ...newData }));
-  };
+  const currentStep = steps[currentStepIndex];
+  const isFirstStep = currentStepIndex === 0;
+  const isLastStep = currentStepIndex === steps.length - 1;
 
   return {
     currentStepIndex,
     currentStep,
-    CurrentStepComponent: currentStep.component,
-    data,
-    setData,
+    steps,
+    isFirstStep,
+    isLastStep,
+    goToStep,
     nextStep,
     prevStep,
-    goToStep,
-    isFirstStep: currentStepIndex === 0,
-    isLastStep: currentStepIndex === steps.length - 1,
-    validateStep,
+    data,
+    setData,
+    CurrentStepComponent: steps[currentStepIndex].component,
   };
 }

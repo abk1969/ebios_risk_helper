@@ -14,7 +14,7 @@ export enum GravityLevel {
   CRITICAL = 4,
 }
 
-// Niveaux de risque (combinaison de vraisemblance et gravité)
+// Niveaux de risque
 export enum RiskLevel {
   LOW = 'Faible',
   MODERATE = 'Modéré',
@@ -22,31 +22,22 @@ export enum RiskLevel {
   CRITICAL = 'Critique',
 }
 
-export interface Risk {
-  id: string;
-  scenarioId: string;
-  likelihoodLevel: LikelihoodLevel;
-  gravityLevel: GravityLevel;
-  riskTreatmentStatus?: string; // Statut du traitement du risque (par exemple, "à traiter", "en cours", "traité")
-}
+// Types de parties prenantes
+export type StakeholderType = 'interne' | 'externe' | 'fournisseur' | 'client' | 'autre';
 
-// OBSOLETE - Remplacé par Stakeholder et BusinessValue
-// export interface Asset {
-//   id: string;
-//   name: string;
-//   description: string;
-// }
+// Types de menaces
+export type ThreatCategory = 'cyber' | 'physique' | 'humain' | 'organisationnel' | 'autre';
 
-export interface Threat {
-  id: string;
-  name: string;
-  description: string;
-}
+// Statuts de traitement
+export type TreatmentStatus = 'à traiter' | 'en cours' | 'traité';
 
+// Interfaces principales
 export interface Stakeholder {
   id: string;
   name: string;
-  needs: string[];
+  type: StakeholderType;
+  description: string;
+  contact: string;
 }
 
 export interface BusinessValue {
@@ -55,6 +46,13 @@ export interface BusinessValue {
   description: string;
   stakeholderId: string;
   essentialityCriteria: string[];
+}
+
+export interface Threat {
+  id: string;
+  name: string;
+  description: string;
+  category: ThreatCategory;
 }
 
 export interface FearedEvent {
@@ -73,18 +71,27 @@ export interface Scenario {
   likelihoodLevel: LikelihoodLevel;
 }
 
-// Action de traitement du risque
+export interface Risk {
+  id: string;
+  scenarioId: string;
+  likelihoodLevel: LikelihoodLevel;
+  gravityLevel: GravityLevel;
+  riskTreatmentStatus: TreatmentStatus;
+}
+
 export interface ActionPlan {
   id: string;
-  riskId: string; // ID du risque associé
+  riskId: string;
   action: string;
   description: string;
   responsible: string;
-  deadline: string; // Vous pouvez utiliser un type Date si vous préférez
-  status?: string; // Statut de l'action (par exemple, "à faire", "en cours", "terminé")
+  deadline: string;
+  status: TreatmentStatus;
 }
 
+// Interface principale de l'application
 export interface EbiosFormData {
+  id: string;
   context: string;
   stakeholders: Stakeholder[];
   businessValues: BusinessValue[];
@@ -92,5 +99,18 @@ export interface EbiosFormData {
   fearedEvents: FearedEvent[];
   scenarios: Scenario[];
   risks: Risk[];
-  actionPlans: ActionPlan[]; // Ajout du tableau pour les actions de traitement des risques
+  actionPlans: ActionPlan[];
+}
+
+import type { FC } from 'react';
+
+export interface StepComponentProps {
+  data: EbiosFormData;
+  onSubmit: (data: Partial<EbiosFormData>) => void;
+}
+
+export interface Step {
+  title: string;
+  component: FC<StepComponentProps>;
+  validation?: (data: EbiosFormData) => boolean;
 }

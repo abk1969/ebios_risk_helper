@@ -1,160 +1,90 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDownIcon, CheckIcon } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 
-interface Option {
-  id: string;
-  name: string;
-}
-
-interface MultiSelectProps {
-  label: string;
-  id: string;
-  options: Option[];
-  selectedIds: string[];
-  onChange: (selectedIds: string[]) => void;
+interface Props<T> {
+  options: T[];
+  value: T[];
+  onChange: (value: T[]) => void;
+  getOptionLabel: (option: T) => string;
+  getOptionValue: (option: T) => string;
   placeholder?: string;
-  className?: string;
-  error?: string;
 }
 
-const MultiSelect: React.FC<MultiSelectProps> = ({
-  label,
-  id,
+export function MultiSelect<T>({
   options,
-  selectedIds,
+  value,
   onChange,
-  placeholder = 'Sélectionnez des options',
-  className = '',
-  error,
-}) => {
+  getOptionLabel,
+  getOptionValue,
+  placeholder = 'Sélectionner...'
+}: Props<T>) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const filteredOptions = options.filter(option =>
-    option.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const isSelected = (optionId: string) => selectedIds.includes(optionId);
-
-  const handleChange = (optionId: string) => {
-    const newSelectedIds = isSelected(optionId)
-      ? selectedIds.filter(id => id !== optionId)
-      : [...selectedIds, optionId];
-    onChange(newSelectedIds);
-  };
-
-  const toggleDropdown = () => setIsOpen(!isOpen);
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleClickOutside = (event: MouseEvent) => {
-    if (
-      wrapperRef.current &&
-      !wrapperRef.current.contains(event.target as Node)
-    ) {
-      setIsOpen(false);
-    }
-  };
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getSelectedDisplay = () => {
-    if (selectedIds.length === 0) return placeholder;
-    if (selectedIds.length === 1) {
-      const selectedOption = options.find(
-        option => option.id === selectedIds[0],
-      );
-      return selectedOption ? selectedOption.name : placeholder;
+  const handleSelect = (option: T) => {
+    const optionValue = getOptionValue(option);
+    const isSelected = value.some(v => getOptionValue(v) === optionValue);
+    
+    if (isSelected) {
+      onChange(value.filter(v => getOptionValue(v) !== optionValue));
+    } else {
+      onChange([...value, option]);
     }
-    return `${selectedIds.length} option(s) sélectionnée(s)`;
   };
 
   return (
-    <div className={`relative ${className}`} ref={wrapperRef}>
-      <label
-        htmlFor={id}
-        className="block text-sm font-medium text-gray-700 mb-1"
-      >
-        {label}
-      </label>
+    <div className="relative" ref={containerRef}>
       <button
         type="button"
-        onClick={toggleDropdown}
-        className={`relative w-full bg-white border rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-          error ? 'border-red-500' : 'border-gray-300'
-        }`}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-labelledby={id}
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full p-2 border rounded text-left bg-white flex justify-between items-center"
       >
-        <span className="block truncate">{getSelectedDisplay()}</span>
-        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-          <ChevronDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+        <span className="truncate">
+          {value.length > 0
+            ? value.map(v => getOptionLabel(v)).join(', ')
+            : placeholder}
         </span>
+        <span className="ml-2">▼</span>
       </button>
-
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-
+      
       {isOpen && (
-        <div
-          className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
-          role="listbox"
-        >
-          <div className="sticky top-0 z-10 bg-white px-2 py-1.5">
-            <input
-              type="text"
-              className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              aria-label="Rechercher"
-            />
-          </div>
-
-          <div className="pt-1 pb-2 px-2 space-y-1">
-            {filteredOptions.length === 0 ? (
+        <div className="absolute z-10 w-full mt-1 border rounded bg-white shadow-lg max-h-60 overflow-auto">
+          {options.map((option) => {
+            const isSelected = value.some(
+              v => getOptionValue(v) === getOptionValue(option)
+            );
+            return (
               <div
-                className="text-gray-500 text-sm py-2 px-3"
-                role="option"
+                key={getOptionValue(option)}
+                onClick={() => handleSelect(option)}
+                className={`p-2 cursor-pointer hover:bg-gray-100 ${
+                  isSelected ? 'bg-blue-50' : ''
+                }`}
               >
-                Aucun résultat trouvé
-              </div>
-            ) : (
-              filteredOptions.map(option => (
-                <div
-                  key={option.id}
-                  className={`flex items-center px-3 py-2 cursor-pointer hover:bg-blue-50 rounded-md ${
-                    isSelected(option.id) ? 'bg-blue-50 font-semibold' : ''
-                  }`}
-                  onClick={() => handleChange(option.id)}
-                  role="option"
-                  aria-selected={isSelected(option.id)}
-                >
+                <div className="flex items-center">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
-                    checked={isSelected(option.id)}
+                    checked={isSelected}
                     onChange={() => {}}
-                    onClick={e => e.stopPropagation()}
-                    aria-hidden="true"
+                    className="mr-2"
                   />
-                  <span className="ml-3 block truncate">{option.name}</span>
+                  {getOptionLabel(option)}
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
-};
-
-export default MultiSelect;
+}

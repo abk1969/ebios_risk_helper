@@ -1,217 +1,131 @@
-import React, { useState, useEffect } from 'react';
-import { Threat } from '../../types';
-import HelpTooltip from '../HelpTooltip';
-import { PlusCircle, Trash2, Edit } from 'lucide-react';
+import React, { useState } from 'react';
+import type { EbiosFormData, Threat } from '../../types';
 
-interface ThreatsStepProps {
-  onNext: (threats: Threat[]) => void;
-  onBack: () => void;
-  threats: Threat[];
+interface Props {
+  data: EbiosFormData;
+  onSubmit: (data: Partial<EbiosFormData>) => void;
 }
 
-export const ThreatsStep: React.FC<ThreatsStepProps> = ({
-  onNext,
-  onBack,
-  threats: initialThreats,
-}) => {
-  const [threats, setThreats] = useState<Threat[]>(initialThreats);
-  const [currentThreat, setCurrentThreat] = useState<Threat>({
-    id: '',
+type ThreatCategory = 'cyber' | 'physique' | 'humain' | 'organisationnel' | 'autre';
+
+interface NewThreat {
+  name: string;
+  description: string;
+  category: ThreatCategory | '';
+}
+
+export const ThreatsStep: React.FC<Props> = ({ data, onSubmit }) => {
+  const [newThreat, setNewThreat] = useState<NewThreat>({
     name: '',
     description: '',
+    category: '',
   });
-  const [editMode, setEditMode] = useState<boolean>(false);
-  const [errors, setErrors] = useState<{ name?: string; description?: string }>(
-    {},
-  );
-
-  useEffect(() => {
-    setThreats(initialThreats);
-  }, [initialThreats]);
-
-  const validate = () => {
-    const newErrors: { name?: string; description?: string } = {};
-    if (!currentThreat.name.trim()) {
-      newErrors.name = 'Le nom de la menace est requis.';
-    }
-    if (!currentThreat.description.trim()) {
-      newErrors.description = 'La description de la menace est requise.';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleAddThreat = () => {
-    if (validate()) {
-      setThreats(prev => [
-        ...prev,
-        { ...currentThreat, id: currentThreat.id || crypto.randomUUID() },
-      ]);
-      setCurrentThreat({ id: '', name: '', description: '' });
-      setEditMode(false);
-      setErrors({});
-    }
-  };
+    if (!newThreat.name || !newThreat.category) return;
 
-  const handleEditThreat = (id: string) => {
-    const threatToEdit = threats.find(threat => threat.id === id);
-    if (threatToEdit) {
-      setCurrentThreat(threatToEdit);
-      setEditMode(true);
-      setErrors({});
-    }
-  };
+    const threat: Threat = {
+      id: Date.now().toString(),
+      name: newThreat.name,
+      description: newThreat.description,
+      category: newThreat.category,
+    };
 
-  const handleUpdateThreat = () => {
-    if (validate()) {
-      setThreats(prev =>
-        prev.map(threat =>
-          threat.id === currentThreat.id ? currentThreat : threat,
-        ),
-      );
-      setCurrentThreat({ id: '', name: '', description: '' });
-      setEditMode(false);
-      setErrors({});
-    }
+    onSubmit({
+      threats: [...data.threats, threat]
+    });
+
+    setNewThreat({
+      name: '',
+      description: '',
+      category: '',
+    });
   };
 
   const handleDeleteThreat = (id: string) => {
-    setThreats(prev => prev.filter(threat => threat.id !== id));
-  };
-
-  const handleNext = () => {
-    onNext(threats);
+    onSubmit({
+      threats: data.threats.filter(t => t.id !== id)
+    });
   };
 
   return (
-    <div>
-      <div className="flex items-center mb-2">
-        <h3 className="text-lg font-medium">
-          Menaces{' '}
-          <HelpTooltip text="Identifiez les menaces qui pourraient compromettre vos valeurs métier. Par exemple : vol de données, intrusion, malveillance, erreur humaine, panne, etc." />
-        </h3>
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">
-          Nom de la menace
-        </label>
-        <input
-          type="text"
-          className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          value={currentThreat.name}
-          onChange={e => {
-            setCurrentThreat(prev => ({ ...prev, name: e.target.value }));
-            if (errors.name) {
-              setErrors(prev => ({ ...prev, name: undefined }));
-            }
-          }}
-          placeholder="Nom de la menace..."
-        />
-        {errors.name && (
-          <p className="mt-2 text-sm text-red-600">{errors.name}</p>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">
-          Description de la menace
-        </label>
-        <textarea
-          className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          value={currentThreat.description}
-          onChange={e => {
-            setCurrentThreat(prev => ({
-              ...prev,
-              description: e.target.value,
-            }));
-            if (errors.description) {
-              setErrors(prev => ({ ...prev, description: undefined }));
-            }
-          }}
-          placeholder="Description de la menace..."
-          rows={3}
-        />
-        {errors.description && (
-          <p className="mt-2 text-sm text-red-600">{errors.description}</p>
-        )}
-      </div>
-      <div className="mt-2 mb-4">
-        <p className="text-sm text-gray-600">
-          Exemples de menaces :
-        </p>
-        <ul className="list-disc list-inside text-sm text-gray-600 mt-2">
-          <li>"Vol de données"</li>
-          <li>"Intrusion sur le serveur"</li>
-          <li>"Attaque par déni de service"</li>
-          <li>"Divulgation accidentelle d'informations"</li>
-        </ul>
-      </div>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        onClick={editMode ? handleUpdateThreat : handleAddThreat}
-        disabled={
-          !currentThreat.name.trim() || !currentThreat.description.trim()
-        }
-      >
-        <PlusCircle className="w-4 h-4" />
-        {editMode ? 'Modifier la menace' : 'Ajouter la menace'}
-      </button>
-
-      {/* Afficher les menaces ajoutées */}
-      <div className="mt-6">
-        <h3 className="text-lg font-medium mb-2">Menaces ajoutées :</h3>
-        {threats.length > 0 ? (
-          <div className="space-y-3">
-            {threats.map(threat => (
-              <div
-                key={threat.id}
-                className="p-4 bg-gray-50 rounded-lg space-y-2"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-medium text-gray-900">{threat.name}</h4>
-                    <p className="text-sm text-gray-600">
-                      {threat.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleEditThreat(threat.id)}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteThreat(threat.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold">Menaces</h2>
+      
+      {/* Formulaire d'ajout */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Nom</label>
+            <input
+              type="text"
+              value={newThreat.name}
+              onChange={e => setNewThreat(prev => ({ ...prev, name: e.target.value }))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Ex: Attaque par déni de service"
+            />
           </div>
-        ) : (
-          <p>Aucune menace ajoutée pour le moment.</p>
-        )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Catégorie</label>
+            <select
+              value={newThreat.category}
+              onChange={e => setNewThreat(prev => ({ ...prev, category: e.target.value as ThreatCategory }))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">Sélectionner une catégorie</option>
+              <option value="cyber">Cyber</option>
+              <option value="physique">Physique</option>
+              <option value="humain">Humain</option>
+              <option value="organisationnel">Organisationnel</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <textarea
+            value={newThreat.description}
+            onChange={e => setNewThreat(prev => ({ ...prev, description: e.target.value }))}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            rows={3}
+            placeholder="Description de la menace..."
+          />
+        </div>
+
+        <button
+          onClick={handleAddThreat}
+          disabled={!newThreat.name || !newThreat.category}
+          className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+        >
+          Ajouter la menace
+        </button>
       </div>
 
-      <div className="mt-6 flex justify-between">
-        <button
-          className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-          onClick={onBack}
-        >
-          Retour
-        </button>
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={handleNext}
-          disabled={threats.length === 0}
-        >
-          Suivant
-        </button>
+      {/* Liste des menaces */}
+      <div className="space-y-4">
+        {data.threats.map(threat => (
+          <div key={threat.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+            <div>
+              <div className="font-medium">{threat.name}</div>
+              <div className="text-sm text-gray-500">
+                Catégorie: {threat.category}
+              </div>
+              {threat.description && (
+                <div className="text-sm text-gray-500 mt-1">
+                  {threat.description}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => handleDeleteThreat(threat.id)}
+              className="text-red-600 hover:text-red-800"
+            >
+              Supprimer
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

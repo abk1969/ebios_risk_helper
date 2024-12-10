@@ -1,184 +1,147 @@
-import React, { useState, useEffect } from 'react';
-import { Stakeholder } from '../../types';
-import HelpTooltip from '../HelpTooltip';
+import React, { useState } from 'react';
+import type { EbiosFormData, Stakeholder } from '../../types';
 
-interface StakeholdersStepProps {
-  onNext: (stakeholders: Stakeholder[]) => void;
-  onBack: () => void;
-  stakeholders: Stakeholder[];
+interface Props {
+  data: EbiosFormData;
+  onSubmit: (data: Partial<EbiosFormData>) => void;
 }
 
-export const StakeholdersStep: React.FC<StakeholdersStepProps> = ({
-  onNext,
-  onBack,
-  stakeholders,
-}) => {
-  const [localStakeholders, setLocalStakeholders] = useState<Stakeholder[]>(
-    stakeholders,
-  );
-  const [currentStakeholderName, setCurrentStakeholderName] = useState('');
-  const [currentStakeholderNeeds, setCurrentStakeholderNeeds] = useState('');
-  const [errors, setErrors] = useState<{ name?: string; needs?: string }>({});
+type StakeholderType = 'interne' | 'externe' | 'fournisseur' | 'client' | 'autre';
 
-  useEffect(() => {
-    setLocalStakeholders(stakeholders);
-  }, [stakeholders]);
+interface NewStakeholder {
+  name: string;
+  type: StakeholderType | '';
+  description: string;
+  contact: string;
+}
 
-  const validate = () => {
-    const newErrors: { name?: string; needs?: string } = {};
-    if (!currentStakeholderName.trim()) {
-      newErrors.name = 'Le nom de la partie prenante est requis.';
-    }
-    if (!currentStakeholderNeeds.trim()) {
-      newErrors.needs = 'Les besoins de la partie prenante sont requis.';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+export const StakeholdersStep: React.FC<Props> = ({ data, onSubmit }) => {
+  const [newStakeholder, setNewStakeholder] = useState<NewStakeholder>({
+    name: '',
+    type: '',
+    description: '',
+    contact: '',
+  });
 
   const handleAddStakeholder = () => {
-    if (!validate()) {
-      return;
-    }
+    if (!newStakeholder.name || !newStakeholder.type) return;
 
-    const newStakeholder: Stakeholder = {
+    const stakeholder: Stakeholder = {
       id: Date.now().toString(),
-      name: currentStakeholderName,
-      needs: currentStakeholderNeeds.split(',').map(need => need.trim()),
+      name: newStakeholder.name,
+      type: newStakeholder.type,
+      description: newStakeholder.description,
+      contact: newStakeholder.contact,
     };
-    setLocalStakeholders(prev => [...prev, newStakeholder]);
-    setCurrentStakeholderName('');
-    setCurrentStakeholderNeeds('');
-    setErrors({});
+
+    onSubmit({
+      stakeholders: [...data.stakeholders, stakeholder]
+    });
+
+    setNewStakeholder({
+      name: '',
+      type: '',
+      description: '',
+      contact: '',
+    });
   };
 
-  const handleDeleteStakeholder = (stakeholderId: string) => {
-    setLocalStakeholders(prev =>
-      prev.filter(stakeholder => stakeholder.id !== stakeholderId),
-    );
-  };
-
-  const handleNext = () => {
-    onNext(localStakeholders);
+  const handleDeleteStakeholder = (id: string) => {
+    onSubmit({
+      stakeholders: data.stakeholders.filter(s => s.id !== id)
+    });
   };
 
   return (
-    <div>
-      <div className="flex items-center mb-2">
-        <h3 className="text-lg font-medium">
-          Parties prenantes{' '}
-          <HelpTooltip text="Identifiez les acteurs (internes ou externes) qui ont un intérêt dans le système étudié. Par exemple : les utilisateurs, les clients, la direction, les partenaires, etc." />
-        </h3>
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">
-          Nom de la partie prenante
-        </label>
-        <input
-          type="text"
-          className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          value={currentStakeholderName}
-          onChange={e => {
-            setCurrentStakeholderName(e.target.value);
-            if (errors.name) {
-              setErrors(prev => ({ ...prev, name: undefined }));
-            }
-          }}
-        />
-        {errors.name && (
-          <p className="mt-2 text-sm text-red-600">{errors.name}</p>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">
-          Besoins de la partie prenante (séparez par des virgules)
-        </label>
-        <textarea
-          className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          value={currentStakeholderNeeds}
-          onChange={e => {
-            setCurrentStakeholderNeeds(e.target.value);
-            if (errors.needs) {
-              setErrors(prev => ({ ...prev, needs: undefined }));
-            }
-          }}
-          rows={3}
-        />
-        {errors.needs && (
-          <p className="mt-2 text-sm text-red-600">{errors.needs}</p>
-        )}
-      </div>
-      <div className="mt-2 mb-4">
-        <p className="text-sm text-gray-600">
-          Exemples de besoins :
-        </p>
-        <ul className="list-disc list-inside text-sm text-gray-600 mt-2">
-          <li>
-            "Accéder aux données de l'entreprise de manière sécurisée" (Utilisateur)
-          </li>
-          <li>
-            "Assurer la continuité de l'activité" (Direction)
-          </li>
-          <li>
-            "Respecter les exigences légales en matière de protection des données"
-            (Client)
-          </li>
-        </ul>
-      </div>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-        onClick={handleAddStakeholder}
-        disabled={
-          !currentStakeholderName.trim() || !currentStakeholderNeeds.trim()
-        }
-      >
-        Ajouter la partie prenante
-      </button>
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold">Parties prenantes</h2>
+      
+      {/* Formulaire d'ajout */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Nom</label>
+            <input
+              type="text"
+              value={newStakeholder.name}
+              onChange={e => setNewStakeholder(prev => ({ ...prev, name: e.target.value }))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Ex: Direction des Systèmes d'Information"
+            />
+          </div>
 
-      {/* Afficher les parties prenantes ajoutées */}
-      <div className="mt-6">
-        <h3 className="text-lg font-medium mb-2">
-          Parties prenantes ajoutées :
-        </h3>
-        {localStakeholders.length > 0 ? (
-          <ul>
-            {localStakeholders.map(stakeholder => (
-              <li
-                key={stakeholder.id}
-                className="flex items-center justify-between mb-2"
-              >
-                <div>
-                  <span className="font-medium">{stakeholder.name}</span> -
-                  Besoins : {stakeholder.needs.join(', ')}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Type</label>
+            <select
+              value={newStakeholder.type}
+              onChange={e => setNewStakeholder(prev => ({ ...prev, type: e.target.value as StakeholderType }))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">Sélectionner un type</option>
+              <option value="interne">Interne</option>
+              <option value="externe">Externe</option>
+              <option value="fournisseur">Fournisseur</option>
+              <option value="client">Client</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <textarea
+            value={newStakeholder.description}
+            onChange={e => setNewStakeholder(prev => ({ ...prev, description: e.target.value }))}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            rows={3}
+            placeholder="Description du rôle et des responsabilités..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Contact</label>
+          <input
+            type="text"
+            value={newStakeholder.contact}
+            onChange={e => setNewStakeholder(prev => ({ ...prev, contact: e.target.value }))}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            placeholder="Email ou téléphone"
+          />
+        </div>
+
+        <button
+          onClick={handleAddStakeholder}
+          disabled={!newStakeholder.name || !newStakeholder.type}
+          className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+        >
+          Ajouter la partie prenante
+        </button>
+      </div>
+
+      {/* Liste des parties prenantes */}
+      <div className="space-y-4">
+        {data.stakeholders.map(stakeholder => (
+          <div key={stakeholder.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+            <div>
+              <div className="font-medium">{stakeholder.name}</div>
+              <div className="text-sm text-gray-500">
+                Type: {stakeholder.type}
+                {stakeholder.contact && ` | Contact: ${stakeholder.contact}`}
+              </div>
+              {stakeholder.description && (
+                <div className="text-sm text-gray-500 mt-1">
+                  {stakeholder.description}
                 </div>
-                <button
-                  className="text-red-500 hover:text-red-700"
-                  onClick={() => handleDeleteStakeholder(stakeholder.id)}
-                >
-                  Supprimer
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>Aucune partie prenante ajoutée pour le moment.</p>
-        )}
-      </div>
-
-      <div className="mt-6 flex justify-between">
-        <button
-          className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-          onClick={onBack}
-        >
-          Retour
-        </button>
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={handleNext}
-          disabled={localStakeholders.length === 0}
-        >
-          Suivant
-        </button>
+              )}
+            </div>
+            <button
+              onClick={() => handleDeleteStakeholder(stakeholder.id)}
+              className="text-red-600 hover:text-red-800"
+            >
+              Supprimer
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,46 +1,42 @@
 import React from 'react';
+import HelpTooltip from './HelpTooltip';
 
 interface StepHeaderProps {
-  stepNumber: number;
-  totalSteps: number;
   title: string;
-  description: string;
+  currentStep: number;
+  totalSteps: number;
+  helpText?: string;
+  className?: string;
 }
 
 const StepHeader: React.FC<StepHeaderProps> = ({
-  stepNumber,
-  totalSteps,
   title,
-  description,
+  currentStep,
+  totalSteps,
+  helpText,
+  className = '',
 }) => {
-  const progress = (stepNumber / totalSteps) * 100;
+  const progress = ((currentStep + 1) / totalSteps) * 100;
 
   return (
-    <div className="mb-6">
-      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-        <div
-          className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
-          style={{ width: `${progress}%` }}
-          role="progressbar"
-          aria-valuenow={progress}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Étape ${stepNumber} sur ${totalSteps}`}
-        ></div>
+    <div className={`space-y-4 ${className}`}>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <h2 className="text-xl font-bold">{title}</h2>
+          {helpText && <HelpTooltip content={helpText} />}
+        </div>
+        <div className="text-sm text-gray-500">
+          Étape {currentStep + 1} sur {totalSteps}
+        </div>
       </div>
 
-      <div className="flex items-center gap-3 mb-2">
-        <span className="flex items-center justify-center w-8 h-8 text-sm font-semibold text-white bg-blue-600 rounded-full">
-          {stepNumber}
-        </span>
-        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-        {totalSteps && (
-          <span className="text-sm text-gray-600">
-            (Étape {stepNumber}/{totalSteps})
-          </span>
-        )}
+      {/* Barre de progression */}
+      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-300 ease-in-out"
+          style={{ width: `${progress}%` }}
+        />
       </div>
-      <p className="text-gray-600">{description}</p>
     </div>
   );
 };
