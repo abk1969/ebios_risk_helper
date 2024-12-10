@@ -2,11 +2,20 @@
 
 Application web pour faciliter l'analyse des risques selon la méthode EBIOS RM (Risk Manager).
 
+## 📋 Démo
+
+Accédez à la version en ligne : [EBIOS Risk Helper](https://votre-username.github.io/ebios_risk_helper/)
+
 ## 📋 Description
 
 EBIOS Risk Helper est un outil qui simplifie la réalisation d'analyses de risques selon la méthode EBIOS RM. Il guide l'utilisateur à travers les différentes étapes de la méthode et génère automatiquement des rapports détaillés.
 
 ## 🚀 Démarrage rapide
+
+### Déploiement
+
+L'application est automatiquement déployée sur GitHub Pages à chaque push sur la branche master.
+URL de production : https://votre-username.github.io/ebios_risk_helper/
 
 ### Prérequis
 
