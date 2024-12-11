@@ -8,11 +8,12 @@ interface Props {
 }
 
 export const ContextStep: React.FC<Props> = ({ data, onSubmit }) => {
-  const [context, setContext] = useState(data.context);
+  const [context, setContext] = useState(data.context ?? '');
   const [isDirty, setIsDirty] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContext(e.target.value);
+    const newValue = e.target.value;
+    setContext(newValue);
     setIsDirty(true);
   };
 
@@ -36,6 +37,7 @@ export const ContextStep: React.FC<Props> = ({ data, onSubmit }) => {
         onBlur={handleBlur}
         className="w-full h-64 p-4 border rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         placeholder="Décrivez ici le contexte de votre analyse..."
+        aria-label="Contexte de l'analyse"
       />
     </div>
   );

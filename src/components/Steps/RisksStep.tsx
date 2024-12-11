@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { EbiosFormData, Risk, Scenario, TreatmentStatus } from '../../types';
 import { LikelihoodLevel, GravityLevel } from '../../types';
 import { calculateRiskLevel } from '../../utils/reportUtils';
@@ -14,6 +14,16 @@ interface NewRisk {
   gravityLevel: GravityLevel;
 }
 
+// Définir la constante en utilisant le type importé
+const TREATMENT_STATUSES: TreatmentStatus[] = ['à traiter', 'en cours', 'traité'];
+
+const RISK_LEVEL_STYLES: Record<string, string> = {
+  Critique: 'bg-red-100 text-red-800',
+  Élevé: 'bg-orange-100 text-orange-800',
+  Modéré: 'bg-yellow-100 text-yellow-800',
+  Faible: 'bg-green-100 text-green-800',
+};
+
 export const RisksStep: React.FC<Props> = ({ data, onSubmit }) => {
   const [newRisk, setNewRisk] = useState<NewRisk>({
     scenarioId: '',
@@ -22,34 +32,42 @@ export const RisksStep: React.FC<Props> = ({ data, onSubmit }) => {
   });
 
   const handleAddRisk = () => {
-    if (!newRisk.scenarioId) return;
+    if (!newRisk.scenarioId) {
+      console.warn('Tentative d\'ajout d\'un risque sans scénario sélectionné');
+      return;
+    }
 
-    const risk: Risk = {
-      id: crypto.randomUUID(),
-      scenarioId: newRisk.scenarioId,
-      likelihoodLevel: newRisk.likelihoodLevel,
-      gravityLevel: newRisk.gravityLevel,
-      riskTreatmentStatus: 'à traiter',
-    };
+    try {
+      const risk: Risk = {
+        id: crypto.randomUUID(),
+        name: data.scenarios.find(s => s.id === newRisk.scenarioId)?.name || 'Risque sans nom',
+        scenarioId: newRisk.scenarioId,
+        likelihoodLevel: newRisk.likelihoodLevel,
+        gravityLevel: newRisk.gravityLevel,
+        riskTreatmentStatus: 'à traiter',
+      };
 
-    onSubmit({
-      risks: [...data.risks, risk]
-    });
+      onSubmit({
+        risks: [...data.risks, risk]
+      });
 
-    setNewRisk({
-      scenarioId: '',
-      likelihoodLevel: LikelihoodLevel.MINIMAL,
-      gravityLevel: GravityLevel.NEGLIGIBLE,
-    });
+      setNewRisk({
+        scenarioId: '',
+        likelihoodLevel: LikelihoodLevel.MINIMAL,
+        gravityLevel: GravityLevel.NEGLIGIBLE,
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du risque:', error);
+    }
   };
 
-  const handleDeleteRisk = (id: string) => {
+  const handleDeleteRisk = useCallback((id: string) => {
     onSubmit({
       risks: data.risks.filter(r => r.id !== id)
     });
-  };
+  }, [onSubmit, data.risks]);
 
-  const handleUpdateStatus = (id: string, status: TreatmentStatus) => {
+  const handleUpdateStatus = (id: string, status: TreatmentStatus): void => {
     onSubmit({
       risks: data.risks.map(r =>
         r.id === id ? { ...r, riskTreatmentStatus: status } : r
@@ -57,9 +75,9 @@ export const RisksStep: React.FC<Props> = ({ data, onSubmit }) => {
     });
   };
 
-  const getScenarioDetails = (scenarioId: string): Scenario | undefined => {
+  const getScenarioDetails = useCallback((scenarioId: string): Scenario | undefined => {
     return data.scenarios.find(s => s.id === scenarioId);
-  };
+  }, [data.scenarios]);
 
   return (
     <div className="space-y-6">
@@ -134,6 +152,11 @@ export const RisksStep: React.FC<Props> = ({ data, onSubmit }) => {
           const scenario = getScenarioDetails(risk.scenarioId);
           const riskLevel = calculateRiskLevel(risk.likelihoodLevel, risk.gravityLevel);
 
+          if (!scenario) {
+            console.warn(`Scénario non trouvé pour le risque ${risk.id}`);
+            return null;
+          }
+
           return (
             <div key={risk.id} className="p-4 bg-gray-50 rounded-lg">
               <div className="flex justify-between items-start">
@@ -149,16 +172,15 @@ export const RisksStep: React.FC<Props> = ({ data, onSubmit }) => {
                     onChange={e => handleUpdateStatus(risk.id, e.target.value as TreatmentStatus)}
                     className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   >
-                    <option value="à traiter">À traiter</option>
-                    <option value="en cours">En cours</option>
-                    <option value="traité">Traité</option>
+                    {TREATMENT_STATUSES.map(status => (
+                      <option key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </option>
+                    ))}
                   </select>
                   <div className={`
                     px-2 py-1 rounded text-sm
-                    ${riskLevel === 'Critique' && 'bg-red-100 text-red-800'}
-                    ${riskLevel === 'Élevé' && 'bg-orange-100 text-orange-800'}
-                    ${riskLevel === 'Modéré' && 'bg-yellow-100 text-yellow-800'}
-                    ${riskLevel === 'Faible' && 'bg-green-100 text-green-800'}
+                    ${RISK_LEVEL_STYLES[riskLevel]}
                   `}>
                     {riskLevel}
                   </div>

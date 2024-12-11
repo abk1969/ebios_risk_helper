@@ -1,44 +1,29 @@
 import React from 'react';
-import HelpTooltip from './HelpTooltip';
+import { HelpCircle } from 'lucide-react';
+import { Tooltip } from './ui/Tooltip';
+import type { StepHeaderProps } from '../types';
 
-interface StepHeaderProps {
-  title: string;
-  currentStep: number;
-  totalSteps: number;
-  helpText?: string;
-  className?: string;
-}
-
-const StepHeader: React.FC<StepHeaderProps> = ({
-  title,
+export const StepHeader: React.FC<StepHeaderProps> = ({
   currentStep,
-  totalSteps,
-  helpText,
-  className = '',
-}) => {
-  const progress = ((currentStep + 1) / totalSteps) * 100;
-
-  return (
-    <div className={`space-y-4 ${className}`}>
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <h2 className="text-xl font-bold">{title}</h2>
-          {helpText && <HelpTooltip content={helpText} />}
-        </div>
-        <div className="text-sm text-gray-500">
-          Étape {currentStep + 1} sur {totalSteps}
-        </div>
+  currentStepIndex,
+  totalSteps
+}) => (
+  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+    <div className="flex items-center justify-between">
+      <div>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          {currentStep.title}
+          {currentStep.helpText && (
+            <Tooltip content={currentStep.helpText}>
+              <HelpCircle className="w-5 h-5 opacity-80" />
+            </Tooltip>
+          )}
+        </h2>
+        <p className="text-blue-100 mt-1">{currentStep.subtitle}</p>
       </div>
-
-      {/* Barre de progression */}
-      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-300 ease-in-out"
-          style={{ width: `${progress}%` }}
-        />
+      <div className="text-blue-100">
+        Étape {currentStepIndex + 1} sur {totalSteps}
       </div>
     </div>
-  );
-};
-
-export default StepHeader;
+  </div>
+);

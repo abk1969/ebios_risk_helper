@@ -12,6 +12,8 @@ export const ScenariosStep: React.FC<Props> = ({ data, onSubmit }) => {
     name: '',
     description: '',
     likelihoodLevel: LikelihoodLevel.MINIMAL,
+    threatId: '',
+    fearedEventId: '',
   });
 
   const handleAddScenario = () => {
@@ -20,10 +22,10 @@ export const ScenariosStep: React.FC<Props> = ({ data, onSubmit }) => {
     const scenario: Scenario = {
       id: Date.now().toString(),
       name: newScenario.name,
-      description: newScenario.description || '',
+      description: newScenario.description ?? '',
       threatId: newScenario.threatId,
       fearedEventId: newScenario.fearedEventId,
-      likelihoodLevel: newScenario.likelihoodLevel || LikelihoodLevel.MINIMAL,
+      likelihoodLevel: newScenario.likelihoodLevel ?? LikelihoodLevel.MINIMAL,
     };
 
     onSubmit({
@@ -34,6 +36,8 @@ export const ScenariosStep: React.FC<Props> = ({ data, onSubmit }) => {
       name: '',
       description: '',
       likelihoodLevel: LikelihoodLevel.MINIMAL,
+      threatId: '',
+      fearedEventId: '',
     });
   };
 
@@ -118,8 +122,11 @@ export const ScenariosStep: React.FC<Props> = ({ data, onSubmit }) => {
         <div>
           <label className="block text-sm font-medium text-gray-700">Vraisemblance</label>
           <select
-            value={newScenario.likelihoodLevel}
-            onChange={e => setNewScenario(prev => ({ ...prev, likelihoodLevel: Number(e.target.value) }))}
+            value={newScenario.likelihoodLevel?.toString()}
+            onChange={e => setNewScenario(prev => ({ 
+              ...prev, 
+              likelihoodLevel: parseInt(e.target.value) as LikelihoodLevel 
+            }))}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
             {Object.entries(LikelihoodLevel)

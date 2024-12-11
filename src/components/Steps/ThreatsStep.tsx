@@ -1,44 +1,50 @@
 import React, { useState } from 'react';
-import type { EbiosFormData, Threat } from '../../types';
+import type { EbiosFormData, Threat, ThreatCategory } from '../../types';
 
 interface Props {
   data: EbiosFormData;
   onSubmit: (data: Partial<EbiosFormData>) => void;
 }
 
-type ThreatCategory = 'cyber' | 'physique' | 'humain' | 'organisationnel' | 'autre';
-
 interface NewThreat {
   name: string;
   description: string;
-  category: ThreatCategory | '';
+  category: ThreatCategory;
+  capability: number;
+  resources: string[];
 }
 
 export const ThreatsStep: React.FC<Props> = ({ data, onSubmit }) => {
   const [newThreat, setNewThreat] = useState<NewThreat>({
     name: '',
     description: '',
-    category: '',
+    category: 'cyber',
+    capability: 1,
+    resources: [],
   });
 
   const handleAddThreat = () => {
     if (!newThreat.name || !newThreat.category) return;
 
     const threat: Threat = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: newThreat.name,
       description: newThreat.description,
       category: newThreat.category,
+      capability: newThreat.capability,
+      resources: newThreat.resources,
     };
 
     onSubmit({
-      threats: [...data.threats, threat]
+      threats: [...data.threats, threat],
     });
 
     setNewThreat({
       name: '',
       description: '',
-      category: '',
+      category: 'cyber',
+      capability: 1,
+      resources: [],
     });
   };
 
@@ -70,7 +76,10 @@ export const ThreatsStep: React.FC<Props> = ({ data, onSubmit }) => {
             <label className="block text-sm font-medium text-gray-700">Catégorie</label>
             <select
               value={newThreat.category}
-              onChange={e => setNewThreat(prev => ({ ...prev, category: e.target.value as ThreatCategory }))}
+              onChange={e => setNewThreat(prev => ({ 
+                ...prev, 
+                category: e.target.value as 'cyber' | 'physique' | 'humain' | 'organisationnel' | 'autre'
+              }))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="">Sélectionner une catégorie</option>

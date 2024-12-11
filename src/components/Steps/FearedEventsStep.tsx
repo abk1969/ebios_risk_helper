@@ -13,12 +13,22 @@ export const FearedEventsStep: React.FC<Props> = ({ data, onSubmit }) => {
 
   const handleAddEvent = () => {
     if (!newEvent.businessValueId || !newEvent.threatId) return;
+    
+    const isDuplicate = data.fearedEvents.some(
+      event => event.businessValueId === newEvent.businessValueId && 
+               event.threatId === newEvent.threatId
+    );
+    
+    if (isDuplicate) {
+      alert('Cette combinaison valeur métier/menace existe déjà');
+      return;
+    }
 
     const event: FearedEvent = {
-      id: Date.now().toString(),
+      id: `fe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       businessValueId: newEvent.businessValueId,
       threatId: newEvent.threatId,
-      impactLevel: newEvent.impactLevel || 1,
+      impactLevel: Math.max(1, Math.min(4, newEvent.impactLevel || 1)),
     };
 
     onSubmit({

@@ -24,14 +24,14 @@ export const StakeholdersStep: React.FC<Props> = ({ data, onSubmit }) => {
   });
 
   const handleAddStakeholder = () => {
-    if (!newStakeholder.name || !newStakeholder.type) return;
+    if (!newStakeholder.name.trim() || !newStakeholder.type) return;
 
     const stakeholder: Stakeholder = {
-      id: Date.now().toString(),
-      name: newStakeholder.name,
+      id: crypto.randomUUID(),
+      name: newStakeholder.name.trim(),
       type: newStakeholder.type,
-      description: newStakeholder.description,
-      contact: newStakeholder.contact,
+      description: newStakeholder.description.trim(),
+      contact: newStakeholder.contact.trim(),
     };
 
     onSubmit({
