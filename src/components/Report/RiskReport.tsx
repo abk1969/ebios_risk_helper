@@ -20,6 +20,32 @@ export const RiskReport: React.FC<Props> = ({ data, onActionPlansChange }) => {
     onActionPlansChange(updatedActionPlans);
   };
 
+  // Extraction du composant de niveau de risque pour améliorer la lisibilité
+  const RiskLevelBadge: React.FC<{ level: string }> = ({ level }) => (
+    <div className={`
+      px-3 py-1 rounded-full text-sm font-medium
+      ${level === 'Critique' && 'bg-red-100 text-red-800'}
+      ${level === 'Élevé' && 'bg-orange-100 text-orange-800'}
+      ${level === 'Modéré' && 'bg-yellow-100 text-yellow-800'}
+      ${level === 'Faible' && 'bg-green-100 text-green-800'}
+    `}>
+      {level}
+    </div>
+  );
+
+  // Extraction du composant de barre de progression
+  const ProgressBar: React.FC<{ value: number; max: number }> = ({ value, max }) => (
+    <div className="flex items-center gap-2">
+      <span>{value}</span>
+      <div className="flex-grow bg-gray-200 rounded-full h-2">
+        <div
+          className="bg-blue-500 rounded-full h-2"
+          style={{ width: `${(value / max) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <div id="risk-report" className="space-y-8 print:space-y-6">
       <h2 className="text-2xl font-bold print:text-xl">Rapport d'analyse des risques</h2>
@@ -70,15 +96,7 @@ export const RiskReport: React.FC<Props> = ({ data, onActionPlansChange }) => {
                   <h4 className="text-lg font-semibold">{scenario.name}</h4>
                   <p className="text-gray-600">{scenario.description}</p>
                 </div>
-                <div className={`
-                  px-3 py-1 rounded-full text-sm font-medium
-                  ${riskLevel === 'Critique' && 'bg-red-100 text-red-800'}
-                  ${riskLevel === 'Élevé' && 'bg-orange-100 text-orange-800'}
-                  ${riskLevel === 'Modéré' && 'bg-yellow-100 text-yellow-800'}
-                  ${riskLevel === 'Faible' && 'bg-green-100 text-green-800'}
-                `}>
-                  {riskLevel}
-                </div>
+                <RiskLevelBadge level={riskLevel} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -101,39 +119,15 @@ export const RiskReport: React.FC<Props> = ({ data, onActionPlansChange }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <h5 className="font-medium text-gray-700">Impact</h5>
-                  <div className="flex items-center gap-2">
-                    <span>{fearedEvent.impactLevel}</span>
-                    <div className="flex-grow bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 rounded-full h-2"
-                        style={{ width: `${(fearedEvent.impactLevel / 4) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+                  <ProgressBar value={fearedEvent.impactLevel} max={4} />
                 </div>
                 <div>
                   <h5 className="font-medium text-gray-700">Vraisemblance</h5>
-                  <div className="flex items-center gap-2">
-                    <span>{risk.likelihoodLevel}</span>
-                    <div className="flex-grow bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 rounded-full h-2"
-                        style={{ width: `${(risk.likelihoodLevel / 4) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+                  <ProgressBar value={risk.likelihoodLevel} max={4} />
                 </div>
                 <div>
                   <h5 className="font-medium text-gray-700">Gravité</h5>
-                  <div className="flex items-center gap-2">
-                    <span>{risk.gravityLevel}</span>
-                    <div className="flex-grow bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 rounded-full h-2"
-                        style={{ width: `${(risk.gravityLevel / 4) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+                  <ProgressBar value={risk.gravityLevel} max={4} />
                 </div>
               </div>
 

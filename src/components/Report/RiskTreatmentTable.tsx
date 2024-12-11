@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import type { ActionPlan, Risk, TreatmentStatus } from '../../types';
 import { formatDate } from '../../utils/reportUtils';
 
+// Ajout du type pour le statut
+const TREATMENT_STATUSES = ['à traiter', 'en cours', 'traité'] as const;
+
 interface Props {
   risk: Risk;
   actionPlans: ActionPlan[];
@@ -13,17 +16,19 @@ export const RiskTreatmentTable: React.FC<Props> = ({
   actionPlans,
   onActionPlansChange,
 }) => {
-  const [newActionPlan, setNewActionPlan] = useState<Omit<ActionPlan, 'id'>>({
+  const initialActionPlan: Omit<ActionPlan, 'id'> = {
     riskId: risk.id,
     action: '',
     description: '',
     responsible: '',
     deadline: '',
-    status: 'à traiter',
-  });
+    status: 'à traiter' as TreatmentStatus,
+  };
+
+  const [newActionPlan, setNewActionPlan] = useState<Omit<ActionPlan, 'id'>>(initialActionPlan);
 
   const handleAddAction = () => {
-    if (!newActionPlan.action) return;
+    if (!newActionPlan.action.trim() || !newActionPlan.responsible.trim()) return;
 
     const actionPlan: ActionPlan = {
       id: crypto.randomUUID(),
@@ -31,14 +36,7 @@ export const RiskTreatmentTable: React.FC<Props> = ({
     };
 
     onActionPlansChange([...actionPlans, actionPlan]);
-    setNewActionPlan({
-      riskId: risk.id,
-      action: '',
-      description: '',
-      responsible: '',
-      deadline: '',
-      status: 'à traiter',
-    });
+    setNewActionPlan(initialActionPlan);
   };
 
   const handleDeleteAction = (id: string) => {
@@ -46,6 +44,7 @@ export const RiskTreatmentTable: React.FC<Props> = ({
   };
 
   const handleUpdateStatus = (id: string, status: TreatmentStatus) => {
+    if (!TREATMENT_STATUSES.includes(status)) return;
     onActionPlansChange(
       actionPlans.map(ap =>
         ap.id === id ? { ...ap, status } : ap
@@ -99,7 +98,7 @@ export const RiskTreatmentTable: React.FC<Props> = ({
 
       <button
         onClick={handleAddAction}
-        disabled={!newActionPlan.action}
+        disabled={!newActionPlan.action.trim() || !newActionPlan.responsible.trim()}
         className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
       >
         Ajouter une action

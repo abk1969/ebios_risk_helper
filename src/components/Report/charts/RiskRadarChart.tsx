@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Risk, Scenario } from '../../../types';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 interface Props {
   scenarios: Scenario[];
@@ -20,11 +21,44 @@ export const RiskRadarChart: React.FC<Props> = ({ scenarios, risks }) => {
     };
   });
 
+  // Transformer les données pour Recharts
+  const chartData = [
+    {
+      subject: 'Probabilité',
+      ...data.reduce((acc, item) => ({
+        ...acc,
+        [item.scenario]: item.likelihood
+      }), {})
+    },
+    {
+      subject: 'Gravité',
+      ...data.reduce((acc, item) => ({
+        ...acc,
+        [item.scenario]: item.gravity
+      }), {})
+    }
+  ];
+
   return (
-    <div>
+    <div style={{ width: '100%', height: 400 }}>
       <h3>Radar des risques</h3>
-      {/* Afficher les données calculées */}
-      <pre>{JSON.stringify(data, null, 2)}</pre>
+      <ResponsiveContainer>
+        <RadarChart data={chartData}>
+          <PolarGrid />
+          <PolarAngleAxis dataKey="subject" />
+          <PolarRadiusAxis angle={30} domain={[0, 5]} />
+          {scenarios.map((scenario) => (
+            <Radar
+              key={scenario.id}
+              name={scenario.name}
+              dataKey={scenario.name}
+              stroke={`#${Math.floor(Math.random()*16777215).toString(16)}`}
+              fill={`#${Math.floor(Math.random()*16777215).toString(16)}`}
+              fillOpacity={0.6}
+            />
+          ))}
+        </RadarChart>
+      </ResponsiveContainer>
     </div>
   );
 };
