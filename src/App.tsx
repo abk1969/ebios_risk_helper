@@ -1,139 +1,84 @@
-import { useMultiStepForm } from './hooks/useMultiStepForm';
-import { ContextStep } from './components/Steps/ContextStep';
-import { StakeholdersStep } from './components/Steps/StakeholdersStep';
-import { BusinessValuesStep } from './components/Steps/BusinessValuesStep';
-import { ThreatsStep } from './components/Steps/ThreatsStep';
-import { FearedEventsStep } from './components/Steps/FearedEventsStep';
-import { ScenariosStep } from './components/Steps/ScenariosStep';
-import { RisksStep } from './components/Steps/RisksStep';
-import { ResultsStep } from './components/Steps/ResultsStep';
-import type { EbiosFormData, Step } from './types';
-import { saveAnalysis } from './services/ebiosService';
+import React, { useMemo } from 'react';
+import { Routes, Route, BrowserRouter, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AnimatePresence } from 'framer-motion';
 
-const steps: Step[] = [
-  {
-    title: 'Contexte',
-    component: ContextStep,
-    validation: (data: EbiosFormData) => !!data.context.trim(),
-  },
-  {
-    title: 'Parties prenantes',
-    component: StakeholdersStep,
-    validation: (data: EbiosFormData) => data.stakeholders.length > 0,
-  },
-  {
-    title: 'Valeurs métier',
-    component: BusinessValuesStep,
-    validation: (data: EbiosFormData) => data.businessValues.length > 0,
-  },
-  {
-    title: 'Menaces',
-    component: ThreatsStep,
-    validation: (data: EbiosFormData) => data.threats.length > 0,
-  },
-  {
-    title: 'Événements redoutés',
-    component: FearedEventsStep,
-    validation: (data: EbiosFormData) => data.fearedEvents.length > 0,
-  },
-  {
-    title: 'Scénarios',
-    component: ScenariosStep,
-    validation: (data: EbiosFormData) => data.scenarios.length > 0,
-  },
-  {
-    title: 'Risques',
-    component: RisksStep,
-    validation: (data: EbiosFormData) => data.risks.length > 0,
-  },
-  {
-    title: 'Résultats',
-    component: ResultsStep,
-  },
-];
+// Pages principales
+import LandingPage from './landingpage';
+import { EbiosAnalysis } from './components/EbiosAnalysis';
+import { ResultsPage } from './components/ResultsPage';
+import { DocumentationPage } from './components/pages/DocumentationPage';
+import { DashboardPage } from './components/pages/DashboardPage';
+import NotFoundPage from './components/pages/NotFoundPage';
 
-function App() {
-  const {
-    currentStepIndex,
-    currentStep,
-    data,
-    setData,
-    nextStep,
-    prevStep,
-    isFirstStep,
-    isLastStep,
-    CurrentStepComponent,
-  } = useMultiStepForm(steps);
+// Composants de layout
+import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
+import { LoadingSpinner } from './components/ui/LoadingSpinner';
 
-  const handleSubmit = async (updatedData: Partial<EbiosFormData>) => {
-    const newData = {
-      ...data,
-      ...updatedData
-    };
-    setData(newData);
+// Providers et contextes
+import { AnalysisProvider } from './context/AnalysisContext';
+import { ProgressProvider } from './context/ProgressContext';
 
-    if (isLastStep) {
-      try {
-        await saveAnalysis(newData);
-      } catch (error) {
-        console.error('Error saving analysis:', error);
-      }
-    }
-  };
+// Composant racine
+const Root: React.FC = () => {
+  const location = useLocation();
+
+  // Optimisation du rendu avec useMemo pour les routes
+  const routes = useMemo(() => (
+    <Routes location={location} key={location.pathname}>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/analysis" element={<EbiosAnalysis />} />
+      <Route path="/results" element={<ResultsPage />} />
+      <Route path="/documentation" element={<DocumentationPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  ), [location]);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h1 className="text-2xl font-bold mb-4">
-            Assistant d'analyse des risques EBIOS RM
-          </h1>
+    <AnalysisProvider>
+      <ProgressProvider>
+        <div className="flex flex-col min-h-screen bg-background text-foreground">
+          <Navbar />
+          
+          <main className="flex-grow">
+            <AnimatePresence mode="wait" initial={false}>
+              <React.Suspense fallback={<LoadingSpinner />}>
+                {routes}
+              </React.Suspense>
+            </AnimatePresence>
+          </main>
 
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">{currentStep.title}</h2>
-              <div className="text-sm text-gray-500">
-                Étape {currentStepIndex + 1} sur {steps.length}
-              </div>
-            </div>
-            <div className="h-2 bg-gray-200 rounded">
-              <div
-                className="h-full bg-blue-500 rounded transition-all duration-300"
-                style={{
-                  width: `${((currentStepIndex + 1) / steps.length) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-
-          <CurrentStepComponent
-            data={data}
-            onSubmit={handleSubmit}
-          />
-
-          <div className="mt-6 flex justify-between">
-            {!isFirstStep && (
-              <button
-                onClick={prevStep}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-              >
-                Précédent
-              </button>
-            )}
-            {!isLastStep && (
-              <button
-                onClick={nextStep}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ml-auto"
-                disabled={!currentStep.validation?.(data)}
-              >
-                Suivant
-              </button>
-            )}
-          </div>
+          <Footer />
         </div>
-      </div>
-    </div>
+      </ProgressProvider>
+    </AnalysisProvider>
   );
-}
+};
+
+// Composant App avec BrowserRouter
+const App: React.FC = () => {
+  return (
+    <BrowserRouter basename="/ebios_risk_helper">
+      <Root />
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          className: 'bg-background text-foreground border border-border',
+          duration: 3000,
+          success: {
+            icon: '✅',
+            className: 'border-green-500',
+          },
+          error: {
+            icon: '❌',
+            className: 'border-red-500',
+          },
+        }}
+      />
+    </BrowserRouter>
+  );
+};
 
 export default App;
