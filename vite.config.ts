@@ -22,10 +22,13 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/analytics'],
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth'],
+          'chart-vendor': ['recharts'],
+          'ui-vendor': ['framer-motion', 'lucide-react', 'react-hot-toast'],
         },
       },
     },
   },
+  base: '/ebios_risk_helper/',
 });
