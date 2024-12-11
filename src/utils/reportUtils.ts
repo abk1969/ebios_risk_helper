@@ -17,7 +17,7 @@ import type {
 export const calculateRiskLevel = (likelihood: LikelihoodLevel, gravity: GravityLevel): RiskLevel => {
   const score = likelihood * gravity;
   if (score <= 4) return RiskLevel.LOW;
-  if (score <= 9) return RiskLevel.MODERATE;
+  if (score <= 8) return RiskLevel.MODERATE;
   if (score <= 12) return RiskLevel.HIGH;
   return RiskLevel.CRITICAL;
 };
