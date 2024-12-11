@@ -10,6 +10,8 @@ import {
   where,
   addDoc,
   DocumentData,
+  orderBy,
+  limit,
 } from 'firebase/firestore';
 import type { EbiosFormData } from '../types';
 
@@ -53,16 +55,12 @@ const prepareDataForFirestore = (data: Partial<EbiosFormData>): Record<string, a
 };
 
 // Sauvegarder une nouvelle analyse
-export const saveAnalysis = async (data: Omit<EbiosFormData, 'id'>): Promise<string> => {
+export const saveAnalysis = async (data: EbiosFormData): Promise<void> => {
   try {
-    const firestoreData = {
+    await addDoc(collection(db, 'analyses'), {
       ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), firestoreData);
-    return docRef.id;
+      createdAt: new Date().toISOString()
+    });
   } catch (error) {
     console.error('Error saving analysis:', error);
     throw error;
@@ -130,6 +128,28 @@ export const searchAnalyses = async (field: keyof FirestoreData, value: string):
     return querySnapshot.docs.map(doc => convertFirestoreData(doc.data(), doc.id));
   } catch (error) {
     console.error('Error searching analyses:', error);
+    throw error;
+  }
+};
+
+export const loadAnalysis = async (): Promise<EbiosFormData | null> => {
+  try {
+    const q = query(
+      collection(db, 'analyses'),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const doc = querySnapshot.docs[0];
+    
+    if (doc) {
+      return doc.data() as EbiosFormData;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error loading analysis:', error);
     throw error;
   }
 };
