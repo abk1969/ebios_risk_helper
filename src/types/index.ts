@@ -1,3 +1,5 @@
+import type { FC } from 'react';
+
 // Niveaux de vraisemblance (EBIOS RM)
 export enum LikelihoodLevel {
   MINIMAL = 1,
@@ -15,12 +17,14 @@ export enum GravityLevel {
 }
 
 // Niveaux de risque
-export enum RiskLevel {
-  LOW = 'Faible',
-  MODERATE = 'Modéré',
-  HIGH = 'Élevé',
-  CRITICAL = 'Critique',
-}
+export const RiskLevel = {
+  LOW: 'Faible',
+  MODERATE: 'Modéré',
+  HIGH: 'Élevé',
+  CRITICAL: 'Critique',
+} as const;
+
+export type RiskLevel = typeof RiskLevel[keyof typeof RiskLevel];
 
 // Types de parties prenantes
 export type StakeholderType = 'interne' | 'externe' | 'fournisseur' | 'client' | 'autre';
@@ -37,7 +41,7 @@ export interface Stakeholder {
   name: string;
   type: StakeholderType;
   description: string;
-  contact: string;
+  contact?: string;
 }
 
 export interface BusinessValue {
@@ -46,6 +50,7 @@ export interface BusinessValue {
   description: string;
   stakeholderId: string;
   essentialityCriteria: string[];
+  criticity?: number;
 }
 
 export interface Threat {
@@ -53,6 +58,8 @@ export interface Threat {
   name: string;
   description: string;
   category: ThreatCategory;
+  capability: number;
+  resources: string[];
 }
 
 export interface FearedEvent {
@@ -73,6 +80,7 @@ export interface Scenario {
 
 export interface Risk {
   id: string;
+  name: string;
   scenarioId: string;
   likelihoodLevel: LikelihoodLevel;
   gravityLevel: GravityLevel;
@@ -85,13 +93,12 @@ export interface ActionPlan {
   action: string;
   description: string;
   responsible: string;
-  deadline: string;
+  deadline?: string;
   status: TreatmentStatus;
 }
 
-// Interface principale de l'application
 export interface EbiosFormData {
-  id: string;
+  id?: string;
   context: string;
   stakeholders: Stakeholder[];
   businessValues: BusinessValue[];
@@ -102,8 +109,6 @@ export interface EbiosFormData {
   actionPlans: ActionPlan[];
 }
 
-import type { FC } from 'react';
-
 export interface StepComponentProps {
   data: EbiosFormData;
   onSubmit: (data: Partial<EbiosFormData>) => void;
@@ -111,6 +116,29 @@ export interface StepComponentProps {
 
 export interface Step {
   title: string;
+  subtitle: string;
   component: FC<StepComponentProps>;
   validation?: (data: EbiosFormData) => boolean;
+  helpText?: string;
+}
+
+export interface StepHeaderProps {
+  currentStep: {
+    title: string;
+    subtitle: string;
+    helpText?: string;
+  };
+  currentStepIndex: number;
+  totalSteps: number;
+}
+
+export interface Analysis {
+  id: string;
+  title: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  currentStep: number;
+  status: 'draft' | 'in_progress' | 'completed';
+  data: EbiosFormData;
 }
