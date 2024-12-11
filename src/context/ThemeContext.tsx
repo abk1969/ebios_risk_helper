@@ -1,87 +1,51 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-type Theme = 'light' | 'dark' | 'system';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { themeConfig, type Theme } from '../config/theme';
 
 interface ThemeContextType {
   theme: Theme;
-  setTheme: (theme: Theme) => void;
-  isDark: boolean;
+  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-interface ThemeProviderProps {
-  children: React.ReactNode;
-  defaultTheme?: Theme;
-}
-
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({
-  children,
-  defaultTheme = 'system'
-}) => {
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    return savedTheme || defaultTheme;
-  });
-
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (theme === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem(themeConfig.storageKey) as Theme;
+      if (savedTheme) {
+        return savedTheme;
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches 
+        ? 'dark' 
+        : themeConfig.defaultTheme;
     }
-    return theme === 'dark';
+    return themeConfig.defaultTheme;
   });
 
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
-
-    let effectiveTheme: 'light' | 'dark';
-    if (theme === 'system') {
-      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      effectiveTheme = theme;
-    }
-
-    root.classList.add(effectiveTheme);
-    setIsDark(effectiveTheme === 'dark');
-    localStorage.setItem('theme', theme);
+    root.classList.add(theme);
+    localStorage.setItem(themeConfig.storageKey, theme);
   }, [theme]);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (theme === 'system') {
-        setIsDark(mediaQuery.matches);
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
-
-  const value = {
-    theme,
-    setTheme,
-    isDark,
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
+
+  const value = { theme, toggleTheme };
 
   return (
     <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
-};
+}
 
-export const useTheme = () => {
+export function useTheme() {
   const context = useContext(ThemeContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
-};
-
-// Hook pour faciliter l'utilisation des couleurs selon le thème
-export const useThemeColor = (lightColor: string, darkColor: string): string => {
-  const { isDark } = useTheme();
-  return isDark ? darkColor : lightColor;
-};
+}
